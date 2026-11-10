@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "Course": {
+      "title": "Course",
+      "description": "A course subject taught by the instructor",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 30 },
+        "name": { "type": "string", "maxLength": 150 },
+        "term": { "type": "string", "maxLength": 50 },
+        "academicYear": { "type": "string", "maxLength": 10 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "ownerEmail": { "type": "string", "maxLength": 150 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "code", "name", "ownerUid"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A registered student in a course",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "studentCode": { "type": "string", "maxLength": 30 },
+        "name": { "type": "string", "maxLength": 150 },
+        "nickname": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "group": { "type": "string", "maxLength": 50 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "courseId", "studentCode", "name", "ownerUid"]
+    },
+    "AttendanceSession": {
+      "title": "AttendanceSession",
+      "description": "A specific class session or week for checking attendance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "weekNumber": { "type": "number" },
+        "date": { "type": "string", "maxLength": 30 },
+        "topic": { "type": "string", "maxLength": 200 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "totalStudents": { "type": "number" },
+        "presentCount": { "type": "number" },
+        "absentCount": { "type": "number" },
+        "leaveCount": { "type": "number" },
+        "lateCount": { "type": "number" },
+        "avgParticipation": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "courseId", "weekNumber", "date", "ownerUid"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Individual student attendance status and participation score in a session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "sessionId": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentCode": { "type": "string", "maxLength": 30 },
+        "studentName": { "type": "string", "maxLength": 150 },
+        "status": { "type": "string", "enum": ["present", "absent", "leave", "late"] },
+        "participationScore": { "type": "number" },
+        "participationTags": { "type": "array" },
+        "note": { "type": "string", "maxLength": 250 },
+        "ownerUid": { "type": "string", "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "sessionId", "courseId", "studentId", "status", "ownerUid"]
+    }
+  },
+  "firestore": {
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Courses created by instructors"
+    },
+    "/courses/{courseId}/students/{studentId}": {
+      "schema": "Student",
+      "description": "Students enrolled in a specific course"
+    },
+    "/courses/{courseId}/sessions/{sessionId}": {
+      "schema": "AttendanceSession",
+      "description": "Class session dates and attendance aggregate summaries"
+    },
+    "/courses/{courseId}/sessions/{sessionId}/records/{recordId}": {
+      "schema": "AttendanceRecord",
+      "description": "Attendance status and participation score per student per session"
+    }
+  }
+}

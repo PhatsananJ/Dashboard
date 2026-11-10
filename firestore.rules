@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Courses collection
+    match /courses/{courseId} {
+      function isValidCourse(data) {
+        return data.id is string && data.id.size() <= 128 &&
+               data.code is string && data.code.size() <= 30 &&
+               data.name is string && data.name.size() <= 150 &&
+               data.ownerUid == request.auth.uid;
+      }
+
+      allow get: if isOwner(resource.data.ownerUid);
+      allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(courseId) && isValidCourse(incoming());
+      allow update: if isSignedIn() && isValidId(courseId) && isOwner(existing().ownerUid) &&
+                      incoming().ownerUid == existing().ownerUid && isValidCourse(incoming());
+      allow delete: if isSignedIn() && isValidId(courseId) && isOwner(existing().ownerUid);
+
+      // Students subcollection
+      match /students/{studentId} {
+        function isValidStudent(data) {
+          return data.id is string && data.id.size() <= 128 &&
+                 data.studentCode is string && data.studentCode.size() <= 30 &&
+                 data.name is string && data.name.size() <= 150 &&
+                 data.courseId == courseId &&
+                 data.ownerUid == request.auth.uid;
+        }
+
+        allow get: if isOwner(resource.data.ownerUid);
+        allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+        allow create: if isSignedIn() && isValidId(studentId) && isValidStudent(incoming());
+        allow update: if isSignedIn() && isValidId(studentId) && isOwner(existing().ownerUid) &&
+                        incoming().ownerUid == existing().ownerUid && isValidStudent(incoming());
+        allow delete: if isSignedIn() && isValidId(studentId) && isOwner(existing().ownerUid);
+      }
+
+      // Sessions subcollection
+      match /sessions/{sessionId} {
+        function isValidSession(data) {
+          return data.id is string && data.id.size() <= 128 &&
+                 data.courseId == courseId &&
+                 data.date is string && data.date.size() <= 30 &&
+                 data.ownerUid == request.auth.uid;
+        }
+
+        allow get: if isOwner(resource.data.ownerUid);
+        allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+        allow create: if isSignedIn() && isValidId(sessionId) && isValidSession(incoming());
+        allow update: if isSignedIn() && isValidId(sessionId) && isOwner(existing().ownerUid) &&
+                        incoming().ownerUid == existing().ownerUid && isValidSession(incoming());
+        allow delete: if isSignedIn() && isValidId(sessionId) && isOwner(existing().ownerUid);
+
+        // Attendance records subcollection
+        match /records/{recordId} {
+          function isValidRecord(data) {
+            return data.id is string && data.id.size() <= 128 &&
+                   data.sessionId == sessionId &&
+                   data.courseId == courseId &&
+                   data.status in ['present', 'absent', 'leave', 'late'] &&
+                   data.ownerUid == request.auth.uid;
+          }
+
+          allow get: if isOwner(resource.data.ownerUid);
+          allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+          allow create: if isSignedIn() && isValidId(recordId) && isValidRecord(incoming());
+          allow update: if isSignedIn() && isValidId(recordId) && isOwner(existing().ownerUid) &&
+                          incoming().ownerUid == existing().ownerUid && isValidRecord(incoming());
+          allow delete: if isSignedIn() && isValidId(recordId) && isOwner(existing().ownerUid);
+        }
+      }
+    }
+  }
+}
